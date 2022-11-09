@@ -3,26 +3,24 @@ package catchroom.backend.service;
 import catchroom.backend.config.SecurityUtil;
 import catchroom.backend.domain.Address;
 import catchroom.backend.domain.Member;
-import catchroom.backend.domain.Room;
-import catchroom.backend.domain.WishRoom;
 import catchroom.backend.dto.MemberResponseDto;
 import catchroom.backend.repository.MemberImplRepository;
 import catchroom.backend.repository.MemberRepository;
-import catchroom.backend.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class MemberService {
 
     private final MemberRepository memberRepository;
-    private final RoomRepository roomRepository;
 
     private final MemberImplRepository memberImplRepository;
     private final PasswordEncoder passwordEncoder;
@@ -48,7 +46,10 @@ public class MemberService {
 
         return memberRepository.findOne(email);
     }
-
+    public MemberResponseDto loginFind(String email){
+       return memberImplRepository.findById(email).map(MemberResponseDto::of)
+               .orElseThrow(() -> new RuntimeException("로그인 에러"));
+    }
     //토큰 방식 정보 넘기기
     public MemberResponseDto getMyInfoBySecurity() {
         return memberImplRepository.findById(SecurityUtil.getCurrentMemberId())
@@ -66,17 +67,9 @@ public class MemberService {
         return MemberResponseDto.of(memberImplRepository.save(member));
     }
 
-    //찜 기능
-    @Transactional
-    public WishRoom wish(String memberId, Long roomId){
-        //엔티티 조회
-        Member member = memberRepository.findOne(memberId);
-        Room room = roomRepository.findOne(roomId);
 
-        WishRoom wishRoom = WishRoom.createWish(room);
-        member.createWish(wishRoom);
-        return wishRoom;
-    }
+
+
 
 
     // 아이디 삭제

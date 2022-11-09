@@ -20,8 +20,56 @@ const initialState = {
     logInCheckLoading: false,
     logInCheckDone: false,
     logInCheckError: null,
+    wishLoading: false,
+    wishDone: false,
+    wishError: null,
+    wishCancelLoading: false,
+    wishCancelDone: false,
+    wishCancelError: null,
+    show: false,
 };
-
+const us = (data) => ({
+    info: data.info,
+    wishRooms: data.wishRooms,
+});
+export const wishRoom = createAsyncThunk(
+    "wishRoom",
+    async (data, { rejectWithValue }) => {
+        try {
+            axios.defaults.headers.common["Authorization"] = "";
+            const COOKIE = localStorage.getItem("cookie");
+            axios.defaults.headers.common["Authorization"] = `Bearer ${COOKIE}`;
+            const res = await axios.post(`/members/${data}/wish`, data, {
+                withCredentials: true,
+            });
+            console.log("찜하기를 진행 완료 했습니다.");
+            console.log(res);
+            return res.data;
+        } catch (error) {
+            console.error(error);
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
+export const wishCancelRoom = createAsyncThunk(
+    "wishCancelRoom",
+    async (data, { rejectWithValue }) => {
+        try {
+            axios.defaults.headers.common["Authorization"] = "";
+            const COOKIE = localStorage.getItem("cookie");
+            axios.defaults.headers.common["Authorization"] = `Bearer ${COOKIE}`;
+            const res = await axios.post(`/members/${data}/cancel`, data, {
+                withCredentials: true,
+            });
+            console.log("찜 취소를 진행 완료 했습니다.");
+            console.log(res);
+            return res.data;
+        } catch (error) {
+            console.error(error);
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
 export const studentLogIn = createAsyncThunk(
     "studentLogIn",
     async (data, { rejectWithValue }) => {
@@ -29,8 +77,8 @@ export const studentLogIn = createAsyncThunk(
             const res = await axios.post("/members/login", data, {
                 withCredentials: true,
             });
-            console.log(res);
-            localStorage.setItem("cookie", res.data.accessToken);
+            console.log(res.data);
+            localStorage.setItem("cookie", res.data.token.accessToken);
             const COOKIE = localStorage.getItem("cookie");
             console.log(COOKIE);
             return res.data;
@@ -46,7 +94,7 @@ export const hostLogIn = createAsyncThunk(
         try {
             const res = await axios.post("host/logIn", data);
             console.log(res);
-            localStorage.setItem("cookie", res.data.token);
+            localStorage.setItem("cookie", res.data.accessToken);
             const COOKIE = localStorage.getItem("cookie");
             console.log(COOKIE);
             return res.data;
@@ -56,6 +104,7 @@ export const hostLogIn = createAsyncThunk(
         }
     }
 );
+
 export const hostSignUp = createAsyncThunk(
     "hostSignUp",
     async (data, { rejectWithValue }) => {
@@ -97,36 +146,44 @@ export const logInCheck = createAsyncThunk("logInCheck", async () => {
         const res = await axios.get("/members/me", {
             withCredentials: true,
         });
-        console.log(res);
+        //console.log(res);
+        return res.data;
+    } catch (error) {
+        console.error(error);
+    }
+});
+
+export const hostLogOut = createAsyncThunk(
+    "hostLogOut",
+    async (data, { rejectWithValue }) => {
+        try {
+            const res = await axios.post("/hostLogOut", data);
+            console.log(res);
+            localStorage.removeItem("cookie");
+            console.log("쿠키를 삭제했습니다");
+            return res.data;
+        } catch (error) {
+            console.error(error);
+            return rejectWithValue(error.response.data);
+        }
+    }
+);
+
+export const studentLogOut = createAsyncThunk("studentLogOut", async () => {
+    try {
+        axios.defaults.headers.common["Authorization"] = "";
+        const COOKIE = localStorage.getItem("cookie");
+        axios.defaults.headers.common["Authorization"] = `Bearer ${COOKIE}`;
+        const res = await axios.delete("/members/logout");
+        console.log(res.data);
+        if (res.data === COOKIE) {
+            localStorage.removeItem("cookie");
+            console.log("쿠키를 삭제했습니다.");
+        }
         return res.data;
     } catch (error) {
         console.error(error);
         return error.response.data;
-    }
-});
-
-export const hostLogOut = createAsyncThunk("hostLogOut", async (data) => {
-    try {
-        localStorage.removeItem("cookie");
-        const res = await axios.post("/hostLogOut", data);
-        console.log(res);
-
-        return res.data;
-    } catch (error) {
-        console.error(error);
-        return error;
-    }
-});
-
-export const studentLogOut = createAsyncThunk("studentLogOut", async (data) => {
-    try {
-        localStorage.removeItem("cookie");
-        const res = await axios.post("studentLogOut", data);
-        console.log(res);
-
-        return res.data;
-    } catch (error) {
-        console.error(error);
     }
 });
 const userSlice = createSlice({
@@ -138,6 +195,22 @@ const userSlice = createSlice({
             state.signUpDone = false;
             state.signUpError = null;
         },
+        wishClear(state, action) {
+            state.wishLoading = false;
+            state.wishDone = false;
+            state.wishError = null;
+        },
+        wishCancelClear(state, action) {
+            state.wishCancelDone = false;
+            state.wishCancelError = null;
+            state.wishCancelLoading = false;
+        },
+        showChange(state, action) {
+            state.show = !state.show;
+        },
+        showFalse(state, action) {
+            state.show = false;
+        },
     },
     extraReducers: {
         [studentLogIn.pending]: (state, action) => {
@@ -148,7 +221,7 @@ const userSlice = createSlice({
         [studentLogIn.fulfilled]: (state, action) => {
             state.logInLoading = false;
             state.logInDone = true;
-            state.studentUser = action.payload;
+            state.studentUser = us(action.payload);
             state.hostUser = null;
             state.logInError = null;
         },
@@ -245,12 +318,44 @@ const userSlice = createSlice({
             state.logInCheckLoading = false;
             state.logInCheckDone = true;
             state.logInCheckError = null;
-            state.studentUser = action.payload;
+            state.studentUser = us(action.payload);
         },
         [logInCheck.rejected]: (state, action) => {
             state.logInCheckLoading = false;
             state.logInCheckDone = false;
             state.logInCheckError = action.error;
+        },
+        [wishRoom.pending]: (state, action) => {
+            state.wishLoading = true;
+            state.wishDone = false;
+            state.wishError = null;
+        },
+        [wishRoom.fulfilled]: (state, action) => {
+            state.wishLoading = false;
+            state.wishDone = true;
+            state.wishError = null;
+            state.studentUser.wishRooms = action.payload;
+        },
+        [wishRoom.rejected]: (state, action) => {
+            state.wishLoading = false;
+            state.wishDone = false;
+            state.wishError = action.error;
+        },
+        [wishCancelRoom.pending]: (state, action) => {
+            state.wishCancelDone = false;
+            state.wishCancelLoading = true;
+            state.wishCancelError = null;
+        },
+        [wishCancelRoom.fulfilled]: (state, action) => {
+            state.wishCancelDone = true;
+            state.wishCancelLoading = false;
+            state.wishCancelError = null;
+            state.studentUser.wishRooms = action.payload;
+        },
+        [wishCancelRoom.rejected]: (state, action) => {
+            state.wishCancelDone = false;
+            state.wishCancelLoading = false;
+            state.wishCancelError = action.error;
         },
     },
 });

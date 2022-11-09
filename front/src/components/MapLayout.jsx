@@ -3,10 +3,8 @@ import styled from "styled-components";
 import Card from "./Card";
 import { useDispatch, useSelector } from "react-redux";
 import { useCallback } from "react";
-import ModalContainer from "./ModalContainer";
-import { modalActions } from "../reducers/modalSlice";
-import Modal from "react-modal";
-Modal.setAppElement("body");
+import { logInCheck } from "../reducers/userSlice";
+
 const { kakao } = window;
 
 const Divstyle = styled.div`
@@ -59,11 +57,17 @@ const MapContainer = styled.div`
 const MapLayout = ({ searchPlace }) => {
     // 검색결과 배열에 담아줌
     const [Places, setPlaces] = useState([]);
-    const { isOpen } = useSelector((state) => state.modal);
+
     const dispatch = useDispatch();
+    const COOKIE = localStorage.getItem("cookie");
     const onClickCard = () => {
-        dispatch(modalActions.setIsOpen({ data: true }));
+        //변경해야함
     };
+    useEffect(() => {
+        if (COOKIE) {
+            dispatch(logInCheck());
+        }
+    }, [COOKIE]);
     useEffect(() => {
         var infowindow = new kakao.maps.InfoWindow({ zIndex: 1 });
         var markers = [];
@@ -141,7 +145,7 @@ const MapLayout = ({ searchPlace }) => {
                 infowindow.open(map, marker);
             });
         }
-    }, [searchPlace, isOpen]);
+    }, [searchPlace]);
 
     return (
         <Divstyle>
@@ -157,7 +161,7 @@ const MapLayout = ({ searchPlace }) => {
                     }}
                 />
             </MapContainer>
-            {isOpen === true ? <ModalContainer /> : null}
+
             <ResultStyle>
                 {Places.map((item, i) => (
                     <Card

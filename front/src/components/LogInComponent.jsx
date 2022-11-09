@@ -32,6 +32,7 @@ const LogInComponent = () => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [radio, setRadio] = useState("student");
+
     const onChangeStudentRadioButton = useCallback((e) => {
         setRadio("student");
     }, []);
@@ -125,7 +126,7 @@ const LogInComponent = () => {
                     </SignUpBox>
                 </LogInBox>
 
-                <Footer>footer</Footer>
+                <Footer></Footer>
             </Main>
         </>
     );

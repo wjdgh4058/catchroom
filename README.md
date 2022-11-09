@@ -12,14 +12,15 @@
 > Backend
 
 -   지상일
--   🛠 tech : mysql, spring-boot, JPA
+-   🛠 tech : mysql, spring-boot, JPA , AWS(EC2, RDS)
 
 > Frontend
 
 -   이의현
 -   🛠 tech : react, redux, redux-toolkit
+-   notion : [notion](https://www.notion.so/24037361792743ab9637e35613ad56c2)
 
-> 빅데이터 시각화
+    > 빅데이터 시각화
 
 -   이정호
 -   🛠 tech : python, selenium, react
